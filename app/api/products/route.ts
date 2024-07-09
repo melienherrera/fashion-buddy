@@ -19,6 +19,9 @@ import { BedrockEmbeddings } from '@langchain/community/embeddings/bedrock';
 // Environment variables
 const { ASTRA_DB_APPLICATION_TOKEN, ASTRA_DB_ENDPOINT, ANTHROPIC_API_KEY } =
   process.env;
+console.log(process.env.REGION);
+console.log(process.env.ACCESS_KEY_ID);
+console.log(process.env.SECRET_ACCESS_KEY);
 
 export async function POST(req: Request) {
   try {
@@ -110,7 +113,7 @@ export async function POST(req: Request) {
 
 const mapDocsToProducts = (docs: [Document, number][]): ProductType[] => {
   return docs.map((doc) => {
-    console.log(docs)
+    console.log(docs);
     const { $vector, ...cleanMetadata } = doc[0].metadata;
     return {
       ...cleanMetadata,
