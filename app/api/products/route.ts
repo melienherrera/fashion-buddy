@@ -108,6 +108,7 @@ export async function POST(req: Request) {
 }
 
 const mapDocsToProducts = (docs: [Document, number][]): ProductType[] => {
+  // print docs
   console.log(docs)
   return docs.map((doc) => {
     const { $vector, ...cleanMetadata } = doc[0].metadata;
