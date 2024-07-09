@@ -1,57 +1,60 @@
-import { HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
-import { Document } from "@langchain/core/documents";
-import { HumanMessage } from "@langchain/core/messages";
-import { StringOutputParser } from "@langchain/core/output_parsers";
-import {
-  ChatGoogleGenerativeAI,
-  GoogleGenerativeAIEmbeddings,
-} from "@langchain/google-genai";
-import { NextResponse } from "next/server";
-import { RunnableLambda, RunnableSequence } from "@langchain/core/runnables";
-import { Filters, ProductType } from "@/utils/types";
+// import { HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
+import { Document } from '@langchain/core/documents';
+import { HumanMessage } from '@langchain/core/messages';
+import { StringOutputParser } from '@langchain/core/output_parsers';
+// import {
+//   ChatGoogleGenerativeAI,
+//   GoogleGenerativeAIEmbeddings,
+// } from '@langchain/google-genai';
+import { NextResponse } from 'next/server';
+import { RunnableLambda, RunnableSequence } from '@langchain/core/runnables';
+import { Filters, ProductType } from '@/utils/types';
 import {
   AstraDBVectorStore,
   AstraLibArgs,
-} from "@langchain/community/vectorstores/astradb";
+} from '@langchain/community/vectorstores/astradb';
+import { ChatAnthropic } from '@langchain/anthropic';
+import { BedrockEmbeddings } from '@langchain/community/embeddings/bedrock';
 
 // Environment variables
-const { ASTRA_DB_APPLICATION_TOKEN, ASTRA_DB_ENDPOINT, GOOGLE_API_KEY } =
+const { ASTRA_DB_APPLICATION_TOKEN, ASTRA_DB_ENDPOINT, ANTHROPIC_API_KEY } =
   process.env;
+console.log(process.env.REGION);
+console.log(process.env.ACCESS_KEY_ID);
+console.log(process.env.SECRET_ACCESS_KEY);
 
 export async function POST(req: Request) {
   try {
     const data = await req.json();
 
     // Initialize chat and embeddings models
-    const gemini_model = new ChatGoogleGenerativeAI({
-      apiKey: GOOGLE_API_KEY,
-      modelName: "gemini-pro-vision",
+    const anthropic_model = new ChatAnthropic({
+      apiKey: ANTHROPIC_API_KEY,
+      modelName: 'claude-3-sonnet-20240229',
       streaming: false,
-      safetySettings: [
-        {
-          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-          threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-      ],
     });
 
-    const embeddings_model = new GoogleGenerativeAIEmbeddings({
-      apiKey: GOOGLE_API_KEY,
-      modelName: "embedding-001",
+    const embeddings_model = new BedrockEmbeddings({
+      region: process.env.REGION!,
+      credentials: {
+        accessKeyId: process.env.ACCESS_KEY_ID!,
+        secretAccessKey: process.env.SECRET_ACCESS_KEY!,
+      },
+      model: 'amazon.titan-embed-image-v1',
     });
 
     // Create astra config and initailize vector store
     const astraConfig: AstraLibArgs = {
       token: ASTRA_DB_APPLICATION_TOKEN,
       endpoint: ASTRA_DB_ENDPOINT,
-      collection: "fashion_buddy",
+      collection: process.env.ASTRA_COLLECTION,
       collectionOptions: {
         vector: {
-          dimension: 768,
-          metric: "cosine",
+          dimension: 1024,
+          metric: 'cosine',
         },
       },
-      contentKey: "details",
+      contentKey: 'details',
     };
 
     const astra = new AstraDBVectorStore(embeddings_model, astraConfig);
@@ -61,22 +64,23 @@ export async function POST(req: Request) {
     const astraRetrieverChain = RunnableSequence.from([
       RunnableLambda.from((input: string) =>
         embeddings_model.embedQuery(input)
-      ).withConfig({ runName: "GetEmbedding" }),
+      ).withConfig({ runName: 'GetEmbedding' }),
       RunnableLambda.from((input: number[]) =>
         astra.similaritySearchVectorWithScore(
           input,
           10,
           getFilters(data.filters)
         )
-      ).withConfig({ runName: "GetProductsFromAstra" }),
+      ).withConfig({ runName: 'GetProductsFromAstra' }),
       RunnableLambda.from((input: [Document, number][]) =>
         mapDocsToProducts(input)
-      ).withConfig({ runName: "MapDocsToProducts" }),
-    ]).withConfig({ runName: "AstraRetrieverChain" });
+      ).withConfig({ runName: 'MapDocsToProducts' }),
+    ]).withConfig({ runName: 'AstraRetrieverChain' });
 
     // Create our core chain
     const chain = RunnableSequence.from([
-      gemini_model,
+      // anthropic_model,
+      RunnableLambda.from((input: any) => anthropic_model.invoke(input)),
       new StringOutputParser(),
       astraRetrieverChain,
     ]);
@@ -86,11 +90,11 @@ export async function POST(req: Request) {
       new HumanMessage({
         content: [
           {
-            type: "text",
+            type: 'text',
             text: getPrompt(data.filters),
           },
           {
-            type: "image_url",
+            type: 'image_url',
             image_url: data.imageBase64,
           },
         ],
@@ -111,6 +115,7 @@ const mapDocsToProducts = (docs: [Document, number][]): ProductType[] => {
   // print docs
   console.log(docs)
   return docs.map((doc) => {
+    console.log(docs);
     const { $vector, ...cleanMetadata } = doc[0].metadata;
     return {
       ...cleanMetadata,
@@ -121,13 +126,13 @@ const mapDocsToProducts = (docs: [Document, number][]): ProductType[] => {
 };
 
 const getPrompt = (filters: Filters): string => {
-  const categories = filters.categories.length > 0 ? filters.categories : "";
+  const categories = filters.categories.length > 0 ? filters.categories : '';
 
   return `Give a description of each clothing item worn in this photo${
     categories
       ? ` that fall into one the following categories: 
-        ${categories.join(", ")}`
-      : ""
+        ${categories.join(', ')}`
+      : ''
   }`;
 };
 
@@ -143,7 +148,7 @@ const getFilters = (filters: Filters): Record<string, any> => {
     };
   }
 
-  if (filters.gender.length && filters.gender[0] !== "all") {
+  if (filters.gender.length && filters.gender[0] !== 'all') {
     genderFilter = { gender: filters.gender[0] };
   }
 

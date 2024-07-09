@@ -1,15 +1,15 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useImage, useProcessedImage } from "@/components/ImageContext";
-import ResultsContainer from "@/components/ResultsContainer";
-import Image from "next/image";
-import { ArrowRepeat, Cart, FilterLeft } from "react-bootstrap-icons";
-import { useRouter } from "next/navigation";
-import loadingGif from "@/assets/hourglass.gif";
-import { Filters } from "@/utils/types";
-import FilterDrawer from "@/components/FilterDrawer";
-import FilterDialog from "@/components/FilterDialog";
-import Link from "next/link";
+'use client';
+import { useEffect, useState } from 'react';
+import { useImage, useProcessedImage } from '@/components/ImageContext';
+import ResultsContainer from '@/components/ResultsContainer';
+import Image from 'next/image';
+import { ArrowRepeat, Cart, FilterLeft } from 'react-bootstrap-icons';
+import { useRouter } from 'next/navigation';
+import loadingGif from '@/assets/hourglass.gif';
+import { Filters } from '@/utils/types';
+import FilterDrawer from '@/components/FilterDrawer';
+import FilterDialog from '@/components/FilterDialog';
+import Link from 'next/link';
 
 export default function RecommendedProducts() {
   const router = useRouter();
@@ -21,16 +21,16 @@ export default function RecommendedProducts() {
   const [isOpen, setIsOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>({
     categories: [],
-    gender: ["all"],
+    gender: ['all'],
   });
 
   const getProducts = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/products", {
-        method: "POST",
+      const response = await fetch('/api/products', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           imageBase64: processedImage.base64Data,
@@ -54,7 +54,7 @@ export default function RecommendedProducts() {
     if (processedImage) {
       getProducts();
     } else {
-      router.push("/");
+      router.push('/');
     }
   }, []);
 
@@ -66,14 +66,14 @@ export default function RecommendedProducts() {
 
   useEffect(() => {
     if (isOpen) {
-      document.body.classList.add("no-scroll");
+      document.body.classList.add('no-scroll');
     } else {
-      document.body.classList.remove("no-scroll");
+      document.body.classList.remove('no-scroll');
     }
 
     // Cleanup function to remove the class when the component unmounts
     return () => {
-      document.body.classList.remove("no-scroll");
+      document.body.classList.remove('no-scroll');
     };
   }, [isOpen]);
 
@@ -90,8 +90,7 @@ export default function RecommendedProducts() {
             <div className="hidden md:flex w-full">
               <div
                 className="fixed top-6 right-6"
-                onClick={() => setIsOpen(!isOpen)}
-              >
+                onClick={() => setIsOpen(!isOpen)}>
                 <button className="flex gap-2 items-center justify-center rounded-full cream-background px-6 py-3">
                   <img
                     className="w-6 h-6 rounded-full mx-auto object-cover"
@@ -115,11 +114,11 @@ export default function RecommendedProducts() {
                         objectFit="cover"
                       />
                       <div className="p-4 cream-background max-w-[600px]">
-                        {" "}
+                        {' '}
                         <h5 className="text-base font-semibold truncate pb-2">
                           {formatTitle(item.product_name)}
                         </h5>
-                        <p className="text-sm truncate-desc text-sm text-gray-600">
+                        <p className="truncate-desc text-sm text-gray-600">
                           {item.details}
                         </p>
                         <div className="flex items-center gap-2 pt-2">
@@ -133,8 +132,7 @@ export default function RecommendedProducts() {
                             className="slime-background hover:brightness-75 py-2 px-4 rounded-full flex justify-center items-center"
                             href={item.link}
                             rel="noopener noreferrer"
-                            target="_blank"
-                          >
+                            target="_blank">
                             <button className="rounded-full flex justify-center items-center text-xs text-nowrap whitespace-nowrap">
                               <Cart className="mr-2" />
                               Buy
@@ -163,8 +161,7 @@ export default function RecommendedProducts() {
                 </div>
                 <button
                   className="flex items-center text-lg"
-                  onClick={() => setIsOpen(true)}
-                >
+                  onClick={() => setIsOpen(true)}>
                   Filter <FilterLeft width={24} height={24} className="ml-3" />
                 </button>
               </div>
@@ -178,8 +175,7 @@ export default function RecommendedProducts() {
               <div className="flex items-center justify-center py-8 px-4 border-t-2">
                 <button
                   className="flex items-center justify-center rounded-full w-full font-medium text-white bg-black p-3 text-lg leading-snug tracking-tight"
-                  type="button"
-                >
+                  type="button">
                   <ArrowRepeat className="mr-2" />
                   Choose a new outfit
                 </button>
