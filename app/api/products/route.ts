@@ -17,7 +17,7 @@ import { ChatAnthropic } from '@langchain/anthropic';
 import { BedrockEmbeddings } from '@langchain/community/embeddings/bedrock';
 
 // Environment variables
-const { ASTRA_DB_APPLICATION_TOKEN, ASTRA_DB_ENDPOINT, ANTHROPIC_API_KEY } =
+const { process.env.ASTRA_DB_APPLICATION_TOKEN, process.env.ASTRA_DB_ENDPOINT, process.env.ANTHROPIC_API_KEY } =
   process.env;
 console.log(process.env.REGION);
 console.log(process.env.ACCESS_KEY_ID);
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
 
     // Initialize chat and embeddings models
     const anthropic_model = new ChatAnthropic({
-      apiKey: ANTHROPIC_API_KEY,
+      apiKey: process.env.ANTHROPIC_API_KEY,
       modelName: 'claude-3-sonnet-20240229',
       streaming: false,
     });
@@ -45,8 +45,8 @@ export async function POST(req: Request) {
 
     // Create astra config and initailize vector store
     const astraConfig: AstraLibArgs = {
-      token: ASTRA_DB_APPLICATION_TOKEN,
-      endpoint: ASTRA_DB_ENDPOINT,
+      token: process.env.ASTRA_DB_APPLICATION_TOKEN,
+      endpoint: process.env.ASTRA_DB_ENDPOINT,
       collection: process.env.ASTRA_COLLECTION,
       collectionOptions: {
         vector: {
